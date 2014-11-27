@@ -43,6 +43,12 @@ module OmniAuth
         begin
           @ldap_user_info = @adaptor.bind_as(:filter => filter(@adaptor), :size => 1, :password => request['password'])
           return fail!(:invalid_credentials) if !@ldap_user_info
+          
+          if request['time'] and (request['time'].to_i - Time.now.to_i).abs > (2 * 60 * 60)
+            # User-submitted time (UTC seconds since epoch) too far off, we would fail anyway
+            # Being explicit about the error will at least let them see a better message
+            return fail!(:time_offset)
+          end
 
           # I [aocole] believe there is a bug in the Net::LDAP library that
           # improperly encodes utf_8 as ASCII-8BIT when it receives unicode
